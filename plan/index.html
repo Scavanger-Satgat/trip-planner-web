@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PowerShell 배포 테스트</title>
+<style>
+  :root {
+    --bg-page: #FAFAFA;
+    --bg-card: #FFFFFF;
+    --bg-sunken: #F2F2F3;
+    --text-primary: #1E1E20;
+    --text-secondary: #61646B;
+    --border: #E4E5E7;
+    --accent: #2F6FED;
+    --accent-dark: #0B41AC;
+    --accent-light: #789EE8;
+    --accent-tint: rgba(47, 111, 237, 0.08);
+    --status-good: #2D7D46;
+    --status-good-bg: #E9F4EC;
+    --status-warn: #9C6B12;
+    --status-warn-bg: #FBF1DD;
+    --shadow: 0 1px 2px rgba(20,20,20,0.05), 0 10px 24px -16px rgba(20,20,20,0.16);
+    --shadow-hover: 0 6px 14px rgba(20,20,20,0.10), 0 20px 36px -18px rgba(20,20,20,0.22);
+    --font-body: "Malgun Gothic", "맑은 고딕", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+    --bg-page: #141415;
+    --bg-card: #202122;
+    --bg-sunken: #27282A;
+    --text-primary: #F2F2F3;
+    --text-secondary: #B5B7BA;
+    --border: #3B3C40;
+    --accent: #5E90F1;
+    --accent-dark: #1B61EB;
+    --accent-light: #91B0ED;
+    --accent-tint: rgba(94, 144, 241, 0.12);
+    --status-good: #63C084;
+    --status-good-bg: rgba(99, 192, 132, 0.14);
+    --status-warn: #E6BB5C;
+    --status-warn-bg: rgba(230, 187, 92, 0.14);
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 10px 26px -14px rgba(0,0,0,0.55);
+    --shadow-hover: 0 6px 16px rgba(0,0,0,0.5), 0 22px 40px -16px rgba(0,0,0,0.65);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg-page: #141415;
+    --bg-card: #202122;
+    --bg-sunken: #27282A;
+    --text-primary: #F2F2F3;
+    --text-secondary: #B5B7BA;
+    --border: #3B3C40;
+    --accent: #5E90F1;
+    --accent-dark: #1B61EB;
+    --accent-light: #91B0ED;
+    --accent-tint: rgba(94, 144, 241, 0.12);
+    --status-good: #63C084;
+    --status-good-bg: rgba(99, 192, 132, 0.14);
+    --status-warn: #E6BB5C;
+    --status-warn-bg: rgba(230, 187, 92, 0.14);
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 10px 26px -14px rgba(0,0,0,0.55);
+    --shadow-hover: 0 6px 16px rgba(0,0,0,0.5), 0 22px 40px -16px rgba(0,0,0,0.65);
+  }
+  :root[data-theme="light"] {
+    --bg-page: #FAFAFA;
+    --bg-card: #FFFFFF;
+    --bg-sunken: #F2F2F3;
+    --text-primary: #1E1E20;
+    --text-secondary: #61646B;
+    --border: #E4E5E7;
+    --accent: #2F6FED;
+    --accent-dark: #0B41AC;
+    --accent-light: #789EE8;
+    --accent-tint: rgba(47, 111, 237, 0.08);
+    --status-good: #2D7D46;
+    --status-good-bg: #E9F4EC;
+    --status-warn: #9C6B12;
+    --status-warn-bg: #FBF1DD;
+    --shadow: 0 1px 2px rgba(20,20,20,0.05), 0 10px 24px -16px rgba(20,20,20,0.16);
+    --shadow-hover: 0 6px 14px rgba(20,20,20,0.10), 0 20px 36px -18px rgba(20,20,20,0.22);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page {
+    font-family: var(--font-body);
+    background: var(--bg-page);
+    color: var(--text-primary);
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+    line-height: 1.6;
+  }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  ::selection { background: var(--accent-tint); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .hero {
+    padding: 22px 24px;
+    border-radius: 14px;
+    background: linear-gradient(155deg, var(--accent-tint), transparent 60%), var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin: 0 0 8px;
+  }
+  .hero h1 {
+    font-size: clamp(1.5rem, 2.4vw + 1rem, 1.9rem);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .hero .dates {
+    margin: 6px 0 16px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .meta-chip {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+  .theme-toggle {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    font-family: inherit;
+    cursor: pointer;
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+  }
+
+  .day-tabs {
+    display: grid;
+    grid-template-columns: repeat(min(1, 4), 1fr);
+    gap: 8px;
+    margin: 22px 0 18px;
+  }
+  .day-tab {
+    font-family: inherit;
+    cursor: pointer;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .day-tab .tab-date { display: block; font-weight: 800; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+  .day-tab .tab-theme { display: block; font-size: 0.74rem; color: var(--text-secondary); margin-top: 2px; }
+  .day-tab[aria-selected="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .day-tab[aria-selected="true"] .tab-date { color: var(--accent); }
+  .day-tab:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+
+  .day-panel { display: none; }
+  .day-panel.active { display: block; animation: fade-in 0.2s ease; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .day-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .day-head h2 { font-size: 1.2rem; font-weight: 800; }
+  .day-head .day-sub { color: var(--text-secondary); font-size: 0.86rem; }
+  .day-stats { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 0.82rem; color: var(--text-secondary); }
+  .day-stats b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+  .day-map {
+    width: 100%;
+    height: 300px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 18px;
+    background: var(--bg-sunken);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .route { position: relative; padding-left: 30px; margin: 0 0 22px; }
+  .route::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+  .stop { position: relative; margin-bottom: 4px; }
+  .stop::before {
+    content: ""; position: absolute; left: -30px; top: 3px; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--bg-card); border: 3px solid var(--accent); z-index: 1;
+  }
+  .stop-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .stop-name { font-weight: 700; font-size: 0.95rem; }
+  .stop-note { font-size: 0.82rem; color: var(--text-secondary); }
+  .transit { font-size: 0.78rem; color: var(--accent-dark); margin: 6px 0 14px; display: flex; align-items: center; gap: 6px; }
+  .transit::before { content: "\2192"; opacity: 0.7; }
+
+  .map-link {
+    display: inline-flex; align-items: center; font-size: 0.7rem; font-weight: 700;
+    color: var(--accent-dark); text-decoration: none; border: 1px solid var(--accent);
+    border-radius: 999px; padding: 1px 9px; white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .map-link:hover, .map-link:focus-visible { background: var(--accent); color: #fff; }
+  .card-map { display: inline-block; margin-top: 10px; font-size: 0.8rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .card-map:hover, .card-map:focus-visible { color: var(--accent-dark); text-decoration: underline; }
+  .card-map::after { content: " \2192"; }
+
+  .cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card h3 { font-size: 1rem; font-weight: 800; }
+  .tag { font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .tag.food { background: var(--accent-tint); color: var(--accent-dark); }
+  .tag.cafe { background: var(--accent-tint); color: var(--accent); }
+  .tag.activity { background: var(--bg-sunken); color: var(--text-secondary); }
+  .tag.special { background: var(--status-warn-bg); color: var(--status-warn); }
+  .card .loc { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
+  .card .desc { font-size: 0.86rem; margin-top: 8px; }
+  .card .price { margin-top: 10px; font-size: 0.82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .card .caution { margin-top: 8px; font-size: 0.78rem; color: var(--status-warn); }
+
+  .callout {
+    margin: 14px 0 20px; padding: 12px 14px; border-radius: 8px;
+    border-left: 3px solid var(--status-warn); background: var(--status-warn-bg);
+    font-size: 0.85rem; color: var(--text-primary);
+  }
+  .callout b { color: var(--status-warn); }
+  .callout.good { border-left-color: var(--status-good); background: var(--status-good-bg); }
+  .callout.good b { color: var(--status-good); }
+
+  .alt-line { font-size: 0.82rem; color: var(--text-secondary); margin: -6px 0 18px; }
+
+  .pool { margin-top: 34px; }
+  .pool h2 { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
+  .pool .pool-sub { color: var(--text-secondary); font-size: 0.86rem; margin-bottom: 14px; }
+  .pool-filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filter-btn {
+    font-family: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card);
+    color: var(--text-secondary); border-radius: 999px; padding: 6px 14px; font-size: 0.82rem; font-weight: 600;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .filter-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pool-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .pool-grid .card[hidden] { display: none; }
+
+  .notes { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .notes h2 { font-size: 1rem; font-weight: 800; margin-bottom: 10px; }
+  .notes ul { margin: 0; padding-left: 18px; color: var(--text-secondary); font-size: 0.86rem; }
+  .notes li { margin-bottom: 6px; }
+  .notes li:last-child { margin-bottom: 0; }
+  .notes b { color: var(--text-primary); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  @media (max-width: 520px) {
+    .day-tabs { grid-template-columns: repeat(min(1, 2), 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="라이트/다크 모드 전환">라이트/다크</button>
+    <p class="eyebrow">Trip Plan</p>
+    <h1>PowerShell 배포 테스트</h1>
+    <p class="dates">2026-08-01 – 2026-08-02</p>
+    <div class="meta-row">
+      <span class="meta-chip">테스트</span>
+    </div>
+  </header>
+
+  <nav class="day-tabs" role="tablist" aria-label="일자 선택" style="--day-count: 1;">
+    <button class="day-tab" role="tab" data-day="1" aria-selected="true">
+      <span class="tab-date">8/1</span>
+      <span class="tab-theme">테스트</span>
+    </button>
+  </nav>
+
+  <section class="day-panel active" data-panel="1" role="tabpanel">
+    <div class="day-head">
+      <h2>1일차</h2>
+      <span class="day-sub"></span>
+    </div>
+    <div class="day-stats"></div>
+    <div id="map-1" class="day-map">지도를 불러오는 중...</div>
+    <div class="route">
+      <div class="stop">
+        <div class="stop-head">
+          <span class="stop-name">을숙도생태공원</span>
+          <a class="map-link" href="https://map.naver.com/p/search/%EC%9D%84%EC%88%99%EB%8F%84%EC%83%9D%ED%83%9C%EA%B3%B5%EC%9B%90" target="_blank" rel="noopener noreferrer">지도</a>
+        </div>
+        <div class="stop-note">사하구</div>
+      </div>
+    </div>
+    <div class="cards">
+
+    </div>
+
+
+  </section>
+
+  <section class="pool">
+    <h2>후보군 더 보기</h2>
+    <p class="pool-sub">일정에 아직 넣지 않은 후보예요.</p>
+    <div class="pool-filters">
+      <button class="filter-btn" data-filter="all" aria-pressed="true">전체</button>
+      <button class="filter-btn" data-filter="food" aria-pressed="false">맛집</button>
+      <button class="filter-btn" data-filter="cafe" aria-pressed="false">카페</button>
+      <button class="filter-btn" data-filter="activity" aria-pressed="false">액티비티</button>
+      <button class="filter-btn" data-filter="special" aria-pressed="false">특별한 곳</button>
+    </div>
+    <div class="pool-grid">
+
+    </div>
+  </section>
+
+  <footer class="notes">
+    <h2>참고해주세요</h2>
+    <ul>
+
+    </ul>
+  </footer>
+
+</div>
+
+<script src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=fdexnvdaab"></script>
+<script>
+  var MAP_DATA = {"PLACES": {"d1_s0": {"lat": 35.1045849, "lng": 128.974817, "label": "을숙도생태공원"}}};
+  var DAY_ROUTES = {"1": {"stops": ["d1_s0"]}};
+
+  var initedMaps = {};
+
+  function initDayMap(day) {
+    if (initedMaps[day] || typeof naver === "undefined" || !naver.maps) return;
+    var el = document.getElementById("map-" + day);
+    if (!el) return;
+    var route = DAY_ROUTES[day];
+    if (!route || !route.stops || !route.stops.length) {
+      el.textContent = "지도에 표시할 위치가 없습니다.";
+      initedMaps[day] = true;
+      return;
+    }
+
+    var stopLatLngs = route.stops.map(function (key) {
+      var p = MAP_DATA.PLACES[key];
+      return new naver.maps.LatLng(p.lat, p.lng);
+    });
+
+    var bounds = new naver.maps.LatLngBounds(stopLatLngs[0], stopLatLngs[0]);
+    stopLatLngs.forEach(function (ll) { bounds.extend(ll); });
+
+    var map = new naver.maps.Map(el, { center: stopLatLngs[0], zoom: 12 });
+
+    route.stops.forEach(function (key, i) {
+      var p = MAP_DATA.PLACES[key];
+      var marker = new naver.maps.Marker({ position: new naver.maps.LatLng(p.lat, p.lng), map: map, title: p.label });
+      var info = new naver.maps.InfoWindow({
+        content: '<div style="padding:6px 10px;font-size:12px;white-space:nowrap;">' + (i + 1) + ". " + p.label + "</div>"
+      });
+      naver.maps.Event.addListener(marker, "click", function () { info.open(map, marker); });
+    });
+
+    var pathLatLngs;
+    if (route.drivePath && MAP_DATA[route.drivePath]) {
+      pathLatLngs = MAP_DATA[route.drivePath].map(function (pt) { return new naver.maps.LatLng(pt[0], pt[1]); });
+    } else {
+      pathLatLngs = stopLatLngs;
+    }
+
+    new naver.maps.Polyline({ map: map, path: pathLatLngs, strokeColor: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || "#2F6FED", strokeWeight: 4, strokeOpacity: 0.85 });
+
+    map.fitBounds(bounds);
+    initedMaps[day] = true;
+  }
+
+  (function () {
+    var tabs = document.querySelectorAll('.day-tab');
+    var panels = document.querySelectorAll('.day-panel');
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var day = tab.getAttribute('data-day');
+        tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t === tab)); });
+        panels.forEach(function (p) {
+          var match = p.getAttribute('data-panel') === day;
+          p.classList.toggle('active', match);
+          if (match) { p.removeAttribute('hidden'); } else { p.setAttribute('hidden', ''); }
+        });
+        initDayMap(day);
+      });
+    });
+    initDayMap("1");
+
+    var filterBtns = document.querySelectorAll('.filter-btn');
+    var poolCards = document.querySelectorAll('.pool-grid .card');
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filterBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+        var filter = btn.getAttribute('data-filter');
+        poolCards.forEach(function (card) {
+          var show = filter === 'all' || card.getAttribute('data-category') === filter;
+          if (show) { card.removeAttribute('hidden'); } else { card.setAttribute('hidden', ''); }
+        });
+      });
+    });
+
+    var themeToggle = document.getElementById('theme-toggle');
+    var stored = localStorage.getItem('trip-planner-theme');
+    if (stored) { document.documentElement.setAttribute('data-theme', stored); }
+    themeToggle.addEventListener('click', function () {
+      var current = document.documentElement.getAttribute('data-theme');
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('trip-planner-theme', next);
+    });
+  })();
+</script>
+</body>
+</html>

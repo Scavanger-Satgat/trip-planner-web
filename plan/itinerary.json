@@ -1,0 +1,33 @@
+{
+  "days": [
+    {
+      "alt_line": "",
+      "stats": [],
+      "theme_label": "테스트",
+      "subtitle": "",
+      "date_label": "8/1",
+      "day_number": 1,
+      "callouts": [],
+      "transit_notes": [],
+      "stops": [
+        {
+          "location_note": "사하구",
+          "category": "activity",
+          "name": "을숙도생태공원",
+          "address_hint": "부산광역시 사하구 낙동대로398번길 12"
+        }
+      ],
+      "title": "1일차",
+      "cards": []
+    }
+  ],
+  "footer_notes": [],
+  "start_date": "2026-08-01",
+  "end_date": "2026-08-02",
+  "pool": [],
+  "meta_chips": [
+    "테스트"
+  ],
+  "rental_car_day": null,
+  "trip_title": "PowerShell 배포 테스트"
+}
