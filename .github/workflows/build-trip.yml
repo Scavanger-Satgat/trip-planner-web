@@ -1,0 +1,42 @@
+name: Build Trip Plan
+
+on:
+  push:
+    paths:
+      - request.json
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-trip
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate trip plan
+        env:
+          NCP_KEY_ID: ${{ secrets.NCP_KEY_ID }}
+          NCP_KEY_SECRET: ${{ secrets.NCP_KEY_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          ACCENT_COLOR: ${{ secrets.ACCENT_COLOR }}
+        run: python scripts/build_from_request.py
+
+      - name: Commit generated page
+        run: |
+          git config user.name "trip-planner-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add plan/
+          git diff --quiet --cached || git commit -m "Generate trip plan"
+          git push

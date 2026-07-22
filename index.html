@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip Planner</title>
+<style>
+  :root {
+    --bg-page: #FAFAFA; --bg-card: #FFFFFF; --bg-sunken: #F2F2F3;
+    --text-primary: #1E1E20; --text-secondary: #61646B; --border: #E4E5E7;
+    --accent: #2F6FED; --accent-dark: #0B41AC;
+    --status-good: #2D7D46; --status-good-bg: #E9F4EC;
+    --status-warn: #9C6B12; --status-warn-bg: #FBF1DD;
+    --status-bad: #B3261E; --status-bad-bg: #FBEAE9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-page: #141415; --bg-card: #202122; --bg-sunken: #27282A;
+      --text-primary: #F2F2F3; --text-secondary: #B5B7BA; --border: #3B3C40;
+      --accent: #5E90F1; --accent-dark: #1B61EB;
+      --status-good: #63C084; --status-good-bg: rgba(99,192,132,0.14);
+      --status-warn: #E6BB5C; --status-warn-bg: rgba(230,187,92,0.14);
+      --status-bad: #E8695F; --status-bad-bg: rgba(232,105,95,0.14);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", "Noto Sans KR", sans-serif; background: var(--bg-page); color: var(--text-primary); }
+  .page { max-width: 640px; margin: 0 auto; padding: 32px 20px 80px; line-height: 1.6; }
+  h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 6px; }
+  .sub { color: var(--text-secondary); font-size: 0.92rem; margin: 0 0 28px; }
+  fieldset { border: 1px solid var(--border); border-radius: 12px; padding: 18px 18px 20px; margin: 0 0 18px; background: var(--bg-card); }
+  legend { font-weight: 700; font-size: 0.92rem; padding: 0 6px; }
+  label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin: 12px 0 4px; }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], input[type="password"], input[type="date"], textarea, select {
+    width: 100%; font: inherit; font-size: 0.95rem; padding: 9px 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-page); color: var(--text-primary);
+  }
+  textarea { min-height: 140px; font-family: ui-monospace, monospace; font-size: 0.82rem; }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  .hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary); }
+  .checkbox-row input { width: auto; }
+  .mode-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+  .mode-btn {
+    flex: 1; font: inherit; cursor: pointer; padding: 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-page); color: var(--text-secondary); font-weight: 700; font-size: 0.85rem;
+  }
+  .mode-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #itinerary-fields, #prompt-box { display: none; }
+  button#submit-btn {
+    width: 100%; font: inherit; font-size: 1rem; font-weight: 800; cursor: pointer;
+    padding: 14px; border-radius: 10px; border: none; background: var(--accent); color: #fff; margin-top: 4px;
+  }
+  button#submit-btn:disabled { opacity: 0.5; cursor: default; }
+  button.secondary {
+    font: inherit; font-size: 0.82rem; cursor: pointer; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--bg-page); color: var(--text-secondary);
+  }
+  #status-box {
+    margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg-sunken); font-size: 0.88rem; display: none;
+  }
+  #status-box.good { border-color: var(--status-good); background: var(--status-good-bg); }
+  #status-box.warn { border-color: var(--status-warn); background: var(--status-warn-bg); }
+  #status-box.bad { border-color: var(--status-bad); background: var(--status-bad-bg); }
+  #status-box a { color: inherit; font-weight: 700; }
+  pre#prompt-text {
+    white-space: pre-wrap; font-size: 0.78rem; background: var(--bg-page); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; max-height: 260px; overflow: auto;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>여행 계획 만들기</h1>
+  <p class="sub">여행 정보를 입력하면 깃허브 액션이 지도·경로가 담긴 페이지를 자동으로 만들어줘요.</p>
+
+  <form id="trip-form">
+    <fieldset>
+      <legend>깃허브 연결</legend>
+      <label for="gh-token">깃허브 개인 토큰 (Personal Access Token)</label>
+      <input type="password" id="gh-token" autocomplete="off" placeholder="ghp_...">
+      <p class="hint">
+        이 저장소 하나에만 쓰는 <b>fine-grained 토큰</b>을 추천해요 (Contents: Read/Write, Actions: Read/Write 권한만).
+        토큰은 이 브라우저 안에서만 사용되고 어디에도 전송되지 않아요 (깃허브 API 호출에만 쓰여요).
+      </p>
+      <div class="checkbox-row">
+        <input type="checkbox" id="remember-token">
+        <label for="remember-token" style="margin:0;">이 브라우저에 기억하기 (localStorage — 공용 PC에서는 체크하지 마세요)</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>입력 방식</legend>
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn" id="mode-facts" aria-pressed="true">AI가 자동으로 짜기</button>
+        <button type="button" class="mode-btn" id="mode-itinerary" aria-pressed="false">이미 만든 JSON 붙여넣기</button>
+      </div>
+      <p class="hint" id="mode-hint">
+        저장소에 OPENAI_API_KEY 또는 ANTHROPIC_API_KEY 시크릿이 등록되어 있어야 해요.
+      </p>
+    </fieldset>
+
+    <fieldset id="facts-fields">
+      <legend>여행 정보</legend>
+      <label for="f-destination">여행지</label>
+      <input type="text" id="f-destination" placeholder="예: 부산">
+      <div class="row">
+        <div><label for="f-start">시작일</label><input type="date" id="f-start"></div>
+        <div><label for="f-end">종료일</label><input type="date" id="f-end"></div>
+      </div>
+      <label for="f-travelers">동행</label>
+      <input type="text" id="f-travelers" placeholder="예: 아내와 둘이">
+      <label for="f-budget">예산</label>
+      <input type="text" id="f-budget" placeholder="예: 하루 10만원 내외">
+      <label for="f-interests">관심사/여행 스타일</label>
+      <input type="text" id="f-interests" placeholder="예: 맛집, 자연, 액티비티">
+      <label for="f-base">숙소/베이스캠프 (선택)</label>
+      <input type="text" id="f-base">
+      <label for="f-rental">렌트카를 쓰는 날 (선택, 며칠차인지 숫자로)</label>
+      <input type="text" id="f-rental">
+      <label for="f-mustsee">꼭 가고 싶은 곳 (선택)</label>
+      <input type="text" id="f-mustsee">
+      <label for="f-notes">그 외 참고사항 (선택)</label>
+      <input type="text" id="f-notes">
+    </fieldset>
+
+    <fieldset id="itinerary-fields">
+      <legend>여행 계획 JSON</legend>
+      <button type="button" class="secondary" id="show-prompt-btn">챗봇에 붙여넣을 프롬프트 보기</button>
+      <div id="prompt-box" style="margin-top:10px;">
+        <pre id="prompt-text"></pre>
+        <button type="button" class="secondary" id="copy-prompt-btn">복사하기</button>
+      </div>
+      <label for="f-itinerary-json" style="margin-top:14px;">챗봇 답변(JSON) 붙여넣기</label>
+      <textarea id="f-itinerary-json" placeholder='{"trip_title": "...", ...}'></textarea>
+    </fieldset>
+
+    <button type="submit" id="submit-btn">여행 계획 만들기</button>
+  </form>
+
+  <div id="status-box"></div>
+</div>
+<script src="assets/app.js"></script>
+</body>
+</html>
