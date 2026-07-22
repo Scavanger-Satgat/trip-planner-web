@@ -114,6 +114,7 @@ function utf8ToBase64(str) {
 async function ghFetch(token, path, opts = {}) {
   const res = await fetch(`https://api.github.com${path}`, {
     ...opts,
+    cache: "no-store",
     headers: {
       Authorization: `token ${token}`,
       Accept: "application/vnd.github+json",
@@ -149,12 +150,19 @@ async function submitRequest(token, owner, repo, payload) {
   return put.json();
 }
 
-async function findRunForCommit(token, owner, repo, commitSha, maxAttempts = 10) {
+async function findRunForCommit(token, owner, repo, commitSha, maxAttempts = 20) {
+  // Ask GitHub to filter server-side by head_sha (more reliable than paging
+  // through the general run list, which can be crowded by unrelated Pages
+  // deployment runs). cache:"no-store" on ghFetch keeps this from seeing a
+  // stale cached response while polling for a run that just started.
   for (let i = 0; i < maxAttempts; i++) {
-    const res = await ghFetch(token, `/repos/${owner}/${repo}/actions/runs?per_page=10`);
+    const res = await ghFetch(
+      token,
+      `/repos/${owner}/${repo}/actions/runs?head_sha=${commitSha}&event=push&per_page=5`
+    );
     if (res.ok) {
       const data = await res.json();
-      const match = (data.workflow_runs || []).find((r) => r.head_sha === commitSha);
+      const match = (data.workflow_runs || [])[0];
       if (match) return match;
     }
     await new Promise((r) => setTimeout(r, 3000));
